@@ -4,7 +4,7 @@ library(ggplot2)
 library(ggpubr)
 library(rstatix)
 
-setwd("/Users/jennaekwealor/Box Sync/dissertation/project-field/sensor data")
+setwd("~/Documents/dissertation_repositories/syntrichia_field_UV/data_loggers")
 
 data <- na.omit(read.csv(file = "light_quality_raw.csv"))
 data$site <- as.factor(data$site)
@@ -19,7 +19,7 @@ data.par <- data %>% dplyr::filter(., metric == "PAR") %>% select(site,measure,t
 # summary stats
 data.par %>%
   group_by(treatment) %>%
-  get_summary_stats(measure, type = "mean_sd")
+  rstatix::get_summary_stats(measure, type = "mean_sd")
 
 # # A tibble: 3 x 5
 # treatment       variable     n  mean    sd
