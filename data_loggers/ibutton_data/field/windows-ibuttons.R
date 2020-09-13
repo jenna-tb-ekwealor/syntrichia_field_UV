@@ -1,22 +1,14 @@
-## this file demonstrates how to use a collection of functions to load and
-## analyze ibutton temperature data
-## written by 
-## Andrew MacDonald, Feb 2012
-
+## MODIFIED FROM and using Andrew MacDonald's (Feb 2012) ibutton temperature analysis script (https://github.com/aammd/ibutton.functions)
 
 # load in required packages -----------------------------------------------
-
-library(reshape)
-library(lattice)
-library(ggplot2)
 library(tidyverse)
 library(lubridate)
+library(rstatix)
+library(dplyr)
+
+ 
 
 setwd("/Users/jennaekwealor/Documents/dissertation_repositories/syntrichia_field_UV/data_loggers")
-
-UV.filtered<-"#66C2A5" #teal
-UV.transmitted<-"#FC8D62" #orange
-Site.reference<-"#8DA0CB" #purple
 
 # load my functions -------------------------------------------------------
 
@@ -80,129 +72,95 @@ ibutton.df.RH.feb$treatment <- ifelse(grepl("-UV", ibutton.df.RH.feb$ibutton), "
 # fix format
 ibutton.df.temp.feb$Date.Time <- as.POSIXct(ibutton.df.temp.feb$Date.Time)
 ibutton.df.RH.feb$Date.Time <- as.POSIXct(ibutton.df.RH.feb$Date.Time)
+# add plot column
+ibutton.df.temp.feb$plot <- ifelse(grepl("plot21", ibutton.df.temp.feb$ibutton), "twentyone", ifelse(grepl("plot22", ibutton.df.temp.feb$ibutton), "twentytwo", ifelse(grepl("plot23", ibutton.df.temp.feb$ibutton), "twentythree", "")))
+ibutton.df.RH.feb$plot <- ifelse(grepl("plot21", ibutton.df.RH.feb$ibutton), "twentyone", ifelse(grepl("plot22", ibutton.df.RH.feb$ibutton), "twentytwo", ifelse(grepl("plot23", ibutton.df.RH.feb$ibutton), "twentythree", "")))
 
 
-# temp
-
+#### temp ####
 # pull out the high TEMP from each day, for each treatment 
 ibutton.df.temp.feb %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
+  group_by(date, plot, treatment) %>% 
   dplyr::summarize(high = max(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.temp.feb.dailyhigh
 
 head(ibutton.df.temp.feb.dailyhigh)
 
+# find mean daily high for the whole measurement period, per plot
 ibutton.df.temp.feb.dailyhigh %>% 
-  group_by(treatment) %>% 
+  group_by(plot, treatment) %>% 
   dplyr::summarize(meandailyhigh = mean(high), n = n(), sd.dailyhigh = sd(high)) -> ibutton.df.temp.feb.dailyhigh.mean
 head(ibutton.df.temp.feb.dailyhigh.mean)
 
 
-# high temp stats 
-pwc.ibutton.df.temp.feb.dailyhigh <- ibutton.df.temp.feb.dailyhigh %>% ungroup() %>% rstatix::t_test(high ~ treatment, paired = TRUE,p.adjust.method = "BH")
-
-pwc.ibutton.df.temp.feb.dailyhigh
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df      p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl>  <dbl>
-#   1 high  UV.filtered UV.transmitted     4     4     -3.10     3 0.0533
-
-# not taking into account paired dates
-anova.ibutton.df.temp.feb.dailyhigh <-  ibutton.df.temp.feb.dailyhigh %>% ungroup() %>% 
-  rstatix::anova_test(high ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.temp.feb.dailyhigh <-  ibutton.df.temp.feb.dailyhigh %>% ungroup() %>%
+  rstatix::anova_test(high ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.temp.feb.dailyhigh)
 
 # ANOVA Table (type II tests)
 # 
 # Effect DFn DFd     F     p p<.05   ges
-# 1 treatment   1   6 0.326 0.589       0.052
-
-
-
-
-
+# 1 treatment   1  22 0.479 0.496       0.021
 
 
 # pull out the low TEMP from each day, for each treatment 
 ibutton.df.temp.feb %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
+  group_by(date, plot, treatment) %>% 
   dplyr::summarize(low = min(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.temp.feb.dailylow
 head(ibutton.df.temp.feb.dailylow)
 
 ibutton.df.temp.feb.dailylow %>% 
-  group_by(treatment) %>% 
+  group_by(plot, treatment) %>% 
   dplyr::summarize(meandailylow = mean(low), n = n(), sd.dailylow = sd(low)) -> ibutton.df.temp.feb.dailylow.mean
 head(ibutton.df.temp.feb.dailylow.mean)
 
 
-
-# low temp stats 
-pwc.ibutton.df.temp.feb.dailylow <- ibutton.df.temp.feb.dailylow %>% ungroup() %>% rstatix::t_test(low ~ treatment, paired = TRUE)
-
-pwc.ibutton.df.temp.feb.dailylow
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df     p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl> <dbl>
-#   1 low   UV.filtered UV.transmitted     4     4    -0.938     3 0.417
-
-# not taking into account paired dates
-anova.ibutton.df.temp.feb.dailylow <-  ibutton.df.temp.feb.dailylow %>% ungroup() %>% 
-  rstatix::anova_test(low ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.temp.feb.dailylow <-  ibutton.df.temp.feb.dailylow %>% ungroup() %>%
+  rstatix::anova_test(low ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.temp.feb.dailylow)
+
 
 # ANOVA Table (type II tests)
 # 
 # Effect DFn DFd     F     p p<.05   ges
-# 1 treatment   1   6 0.007 0.936       0.001
+# 1 treatment   1  22 0.398 0.535       0.018
 
 
 
-# RH
+#### RH ####
 
 # pull out the high RH from each day, for each treatment 
 ibutton.df.RH.feb %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
-  dplyr::summarize(high = max(Value), n = n(), sd.dailylow = sd(Value)) -> ibutton.df.RH.feb.dailyhigh
+  group_by(date, plot, treatment) %>% 
+  dplyr::summarize(high = max(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.RH.feb.dailyhigh
 
 head(ibutton.df.RH.feb.dailyhigh)
 
+# find mean daily high for the whole measurement period, per plot
 ibutton.df.RH.feb.dailyhigh %>% 
-  group_by(treatment) %>% 
-  dplyr::summarize(meandailyhigh = mean(high), n = n(), sd.dailylow = sd(high)) -> ibutton.df.RH.feb.dailyhigh.mean
+  group_by(plot, treatment) %>% 
+  dplyr::summarize(meandailyhigh = mean(high), n = n(), sd.dailyhigh = sd(high)) -> ibutton.df.RH.feb.dailyhigh.mean
 head(ibutton.df.RH.feb.dailyhigh.mean)
 
 
-
-# high RH stats 
-pwc.ibutton.df.RH.feb.dailyhigh <- ibutton.df.RH.feb.dailyhigh %>% ungroup() %>% rstatix::t_test(high ~ treatment, paired = TRUE)
-
-pwc.ibutton.df.RH.feb.dailyhigh
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df      p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl>  <dbl>
-#   1 high  UV.filtered UV.transmitted     4     4      3.27     3 0.0468
-
-# not taking into account paired dates
-anova.ibutton.df.RH.feb.dailyhigh <-  ibutton.df.RH.feb.dailyhigh %>% ungroup() %>% 
-  rstatix::anova_test(high ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.RH.feb.dailyhigh <-  ibutton.df.RH.feb.dailyhigh %>% ungroup() %>%
+  rstatix::anova_test(high ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.RH.feb.dailyhigh)
-
 # ANOVA Table (type II tests)
 # 
-# Effect DFn DFd      F     p p<.05  ges
-# 1 treatment   1   6 10.689 0.017     * 0.64
-
+# Effect DFn DFd     F     p p<.05   ges
+# 1 treatment   1  22 2.306 0.143       0.095
 
 
 
@@ -210,45 +168,35 @@ rstatix::get_anova_table(anova.ibutton.df.RH.feb.dailyhigh)
 ibutton.df.RH.feb %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
+  group_by(date, plot, treatment) %>% 
   dplyr::summarize(low = min(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.RH.feb.dailylow
 head(ibutton.df.RH.feb.dailylow)
 
 ibutton.df.RH.feb.dailylow %>% 
-  group_by(treatment) %>% 
+  group_by(plot, treatment) %>% 
   dplyr::summarize(meandailylow = mean(low), n = n(), sd.dailylow = sd(low)) -> ibutton.df.RH.feb.dailylow.mean
 head(ibutton.df.RH.feb.dailylow.mean)
 
 
-
-# low RH stats 
-pwc.ibutton.df.RH.feb.dailylow <- ibutton.df.RH.feb.dailylow %>% ungroup() %>% rstatix::t_test(low ~ treatment, paired = TRUE)
-
-pwc.ibutton.df.RH.feb.dailylow
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df     p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl> <dbl>
-#   1 low   UV.filtered UV.transmitted     4     4     -1.10     3 0.352
-
-# not taking into account paired dates
-anova.ibutton.df.RH.feb.dailylow <-  ibutton.df.RH.feb.dailylow %>% ungroup() %>% 
-  rstatix::anova_test(low ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.RH.feb.dailylow <-  ibutton.df.RH.feb.dailylow %>% ungroup() %>%
+  rstatix::anova_test(low ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.RH.feb.dailylow)
 
 # ANOVA Table (type II tests)
 # 
-# Effect DFn DFd     F     p p<.05      ges
-# 1 treatment   1   6 0.005 0.948       0.000769
+# Effect DFn DFd     F     p p<.05   ges
+# 1 treatment   1  22 0.057 0.814       0.003
+
 
 
 
 
 ##### SEPTEMBER 2019! 2 DAYS! #####
 
-ibutton.data.sept.temp <- read.ibutton.folder("ibutton\ data/field/temp/sept2019")
-ibutton.data.sept.RH <- read.ibutton.folder("ibutton\ data/field/RH/sept2019")
+ibutton.data.sept.temp <- read.ibutton.folder("ibutton_data/field/temp/sept2019")
+ibutton.data.sept.RH <- read.ibutton.folder("ibutton_data/field/RH/sept2019")
 
 ## which ones failed? you could just check the number of rows in each, and pick 
 ## the ones which are suspiciously short, indicating that the ibutton stopped 
@@ -302,40 +250,31 @@ ibutton.df.RH.sept$treatment <- ifelse(grepl("-UV", ibutton.df.RH.sept$ibutton),
 # fix format
 ibutton.df.temp.sept$Date.Time <- as.POSIXct(ibutton.df.temp.sept$Date.Time)
 ibutton.df.RH.sept$Date.Time <- as.POSIXct(ibutton.df.RH.sept$Date.Time)
+# add plot column
+ibutton.df.temp.sept$plot <- ifelse(grepl("plot21", ibutton.df.temp.sept$ibutton), "twentyone", ifelse(grepl("plot22", ibutton.df.temp.sept$ibutton), "twentytwo", ifelse(grepl("plot23", ibutton.df.temp.sept$ibutton), "twentythree", "")))
+ibutton.df.RH.sept$plot <- ifelse(grepl("plot21", ibutton.df.RH.sept$ibutton), "twentyone", ifelse(grepl("plot22", ibutton.df.RH.sept$ibutton), "twentytwo", ifelse(grepl("plot23", ibutton.df.RH.sept$ibutton), "twentythree", "")))
 
 
-# temp
-
+#### temp ####
 # pull out the high TEMP from each day, for each treatment 
 ibutton.df.temp.sept %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
+  group_by(date, plot, treatment) %>% 
   dplyr::summarize(high = max(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.temp.sept.dailyhigh
 
 head(ibutton.df.temp.sept.dailyhigh)
 
+# find mean daily high for the whole measurement period, per plot
 ibutton.df.temp.sept.dailyhigh %>% 
-  group_by(treatment) %>% 
+  group_by(plot, treatment) %>% 
   dplyr::summarize(meandailyhigh = mean(high), n = n(), sd.dailyhigh = sd(high)) -> ibutton.df.temp.sept.dailyhigh.mean
 head(ibutton.df.temp.sept.dailyhigh.mean)
 
 
-# high temp stats 
-pwc.ibutton.df.temp.sept.dailyhigh <- ibutton.df.temp.sept.dailyhigh %>% ungroup() %>% rstatix::t_test(high ~ treatment, paired = TRUE)
-
-pwc.ibutton.df.temp.sept.dailyhigh
-
-# # A tibble: 3 x 10
-# .y.   group1         group2            n1    n2 statistic    df     p p.adj p.adj.signif
-# * <chr> <chr>          <chr>          <int> <int>     <dbl> <dbl> <dbl> <dbl> <chr>       
-#   1 high  Site.reference UV.filtered        2     2    -0.812     1 0.566     1 ns          
-# 2 high  Site.reference UV.transmitted     2     2     1.70      1 0.338     1 ns          
-# 3 high  UV.filtered    UV.transmitted     2     2     1.23      1 0.433     1 ns 
-
-# not taking into account paired dates
-anova.ibutton.df.temp.sept.dailyhigh <-  ibutton.df.temp.sept.dailyhigh %>% ungroup() %>% 
-  rstatix::anova_test(high ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.temp.sept.dailyhigh <-  ibutton.df.temp.sept.dailyhigh %>% ungroup() %>%
+  rstatix::anova_test(high ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.temp.sept.dailyhigh)
 
@@ -348,119 +287,78 @@ rstatix::get_anova_table(anova.ibutton.df.temp.sept.dailyhigh)
 
 
 
-
-
 # pull out the low TEMP from each day, for each treatment 
 ibutton.df.temp.sept %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
+  group_by(date, plot, treatment) %>% 
   dplyr::summarize(low = min(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.temp.sept.dailylow
 head(ibutton.df.temp.sept.dailylow)
 
 ibutton.df.temp.sept.dailylow %>% 
-  group_by(treatment) %>% 
+  group_by(plot, treatment) %>% 
   dplyr::summarize(meandailylow = mean(low), n = n(), sd.dailylow = sd(low)) -> ibutton.df.temp.sept.dailylow.mean
 head(ibutton.df.temp.sept.dailylow.mean)
 
 
-
-# low temp stats 
-pwc.ibutton.df.temp.sept.dailylow <- ibutton.df.temp.sept.dailylow %>% ungroup() %>% rstatix::t_test(low ~ treatment, paired = TRUE)
-
-pwc.ibutton.df.temp.sept.dailylow
-
-# Error in t.test.default(x = c(18.586, 14.582), y = c(21.139, 17.135),  : 
-#                           data are essentially constant
-
-# not taking into account paired dates
-anova.ibutton.df.temp.sept.dailylow <-  ibutton.df.temp.sept.dailylow %>% ungroup() %>% 
-  rstatix::anova_test(low ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.temp.sept.dailylow <-  ibutton.df.temp.sept.dailylow %>% ungroup() %>%
+  rstatix::anova_test(low ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.temp.sept.dailylow)
 
-# ANOVA Table (type II tests)
-# 
+
 # Effect DFn DFd     F     p p<.05   ges
 # 1 treatment   2   3 0.647 0.584       0.301
 
 
 
-# RH
+#### RH ####
 
 # pull out the high RH from each day, for each treatment 
 ibutton.df.RH.sept %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
-  dplyr::summarize(high = max(Value), n = n(), sd.dailylow = sd(Value)) -> ibutton.df.RH.sept.dailyhigh
+  group_by(date, plot, treatment) %>% 
+  dplyr::summarize(high = max(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.RH.sept.dailyhigh
 
 head(ibutton.df.RH.sept.dailyhigh)
 
+# find mean daily high for the whole measurement period, per plot
 ibutton.df.RH.sept.dailyhigh %>% 
-  group_by(treatment) %>% 
-  dplyr::summarize(meandailyhigh = mean(high), n = n(), sd.dailylow = sd(high)) -> ibutton.df.RH.sept.dailyhigh.mean
+  group_by(plot, treatment) %>% 
+  dplyr::summarize(meandailyhigh = mean(high), n = n(), sd.dailyhigh = sd(high)) -> ibutton.df.RH.sept.dailyhigh.mean
 head(ibutton.df.RH.sept.dailyhigh.mean)
 
 
-
-# high RH stats 
-pwc.ibutton.df.RH.sept.dailyhigh <- ibutton.df.RH.sept.dailyhigh %>% ungroup() %>% rstatix::t_test(high ~ treatment, paired = TRUE)
-
-pwc.ibutton.df.RH.sept.dailyhigh
-
-# # A tibble: 3 x 10
-# .y.   group1         group2            n1    n2 statistic    df     p p.adj p.adj.signif
-# * <chr> <chr>          <chr>          <int> <int>     <dbl> <dbl> <dbl> <dbl> <chr>       
-#   1 high  Site.reference UV.filtered        2     2      1.65     1 0.347     1 ns          
-# 2 high  Site.reference UV.transmitted     2     2      1.51     1 0.372     1 ns          
-# 3 high  UV.filtered    UV.transmitted     2     2     -1.02     1 0.494     1 ns  
-
-# not taking into account paired dates
-anova.ibutton.df.RH.sept.dailyhigh <-  ibutton.df.RH.sept.dailyhigh %>% ungroup() %>% 
-  rstatix::anova_test(high ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.RH.sept.dailyhigh <-  ibutton.df.RH.sept.dailyhigh %>% ungroup() %>%
+  rstatix::anova_test(high ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.RH.sept.dailyhigh)
-
 # ANOVA Table (type II tests)
 # 
 # Effect DFn DFd     F     p p<.05   ges
 # 1 treatment   2   3 0.727 0.553       0.327
 
 
-
-
-# pull out the low RH from each day, for each treatment 
+# pull out the low TEMP from each day, for each treatment 
 ibutton.df.RH.sept %>% 
   mutate(hour = hour(Date.Time)) %>% 
   mutate(date = date(Date.Time)) %>% 
-  group_by(date, treatment) %>% 
+  group_by(date, plot, treatment) %>% 
   dplyr::summarize(low = min(Value), n = n(), sd.Value = sd(Value)) -> ibutton.df.RH.sept.dailylow
 head(ibutton.df.RH.sept.dailylow)
 
 ibutton.df.RH.sept.dailylow %>% 
-  group_by(treatment) %>% 
+  group_by(plot, treatment) %>% 
   dplyr::summarize(meandailylow = mean(low), n = n(), sd.dailylow = sd(low)) -> ibutton.df.RH.sept.dailylow.mean
 head(ibutton.df.RH.sept.dailylow.mean)
 
 
-
-# low RH stats 
-pwc.ibutton.df.RH.sept.dailylow <- ibutton.df.RH.sept.dailylow %>% ungroup() %>% rstatix::t_test(low ~ treatment, paired = TRUE, p.adjust.method = "BH" )
-
-pwc.ibutton.df.RH.sept.dailylow
-
-# # A tibble: 3 x 10
-# .y.   group1        group2           n1    n2 statistic    df     p p.adj p.adj.signif
-# * <chr> <chr>         <chr>         <int> <int>     <dbl> <dbl> <dbl> <dbl> <chr>       
-#   1 low   Site.referen… UV.filtered       2     2      8.08     1 0.078 0.118 ns          
-# 2 low   Site.referen… UV.transmitt…     2     2     17.9      1 0.036 0.106 ns          
-# 3 low   UV.filtered   UV.transmitt…     2     2     -1.16     1 0.452 0.452 ns 
-
-# not taking into account paired dates
-
-anova.ibutton.df.RH.sept.dailylow <-  ibutton.df.RH.sept.dailylow %>% ungroup() %>% 
-  rstatix::anova_test(low ~ treatment)
+# one way anova with repeated measures (plot pairs/triplets)
+anova.ibutton.df.RH.sept.dailylow <-  ibutton.df.RH.sept.dailylow %>% ungroup() %>%
+  rstatix::anova_test(low ~ treatment, wid = plot)
 
 rstatix::get_anova_table(anova.ibutton.df.RH.sept.dailylow)
 
@@ -470,123 +368,17 @@ rstatix::get_anova_table(anova.ibutton.df.RH.sept.dailylow)
 # 1 treatment   2   3 13.441 0.032     * 0.9
 
 
-###### combined feb and sept data set for paired t test ######
+# posthoc test to find which treatment 
+# low RH paired t test
+pwc.ibutton.df.RH.sept.dailylow <- ibutton.df.RH.sept.dailylow  %>% ungroup() %>% rstatix::t_test(low ~ treatment, paired = TRUE,p.adjust.method = "BH")
+pwc.ibutton.df.RH.sept.dailylow %>% adjust_pvalue(method = "BH") -> pwc.ibutton.df.RH.sept.dailylow
 
-# high temp stats 
+pwc.ibutton.df.RH.sept.dailylow
 
-ibutton.df.combined.temp.dailyhigh <- rbind(ibutton.df.temp.feb.dailyhigh,ibutton.df.temp.sept.dailyhigh)
-
-# Site.reference not a good comparison here since it is only from winter, plus can't do paired
-
-ibutton.df.combined.temp.dailyhigh %>% 
-  dplyr::filter(!treatment == "Site.reference") %>% 
-  ungroup() %>% 
-  rstatix::t_test(high ~ treatment, paired = TRUE) -> pwc.ibutton.df.combined.temp.dailyhigh
-
-pwc.ibutton.df.combined.temp.dailyhigh
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df     p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl> <dbl>
-#   1 high  UV.filtered UV.transmitted     6     6    -0.417     5 0.694 
-
-# not taking into account paired dates
-anova.ibutton.df.combined.temp.dailyhigh <-  ibutton.df.combined.temp.dailyhigh %>% ungroup() %>% 
-  rstatix::anova_test(high ~ treatment)
-
-rstatix::get_anova_table(anova.ibutton.df.combined.temp.dailyhigh)
-
-# ANOVA Table (type II tests)
-# 
-# Effect DFn DFd     F     p p<.05   ges
-# 1 treatment   2  11 1.308 0.309       0.192
-
-
-# low temp stats
-
-ibutton.df.combined.temp.dailylow <- rbind(ibutton.df.temp.feb.dailylow,ibutton.df.temp.sept.dailylow)
-
-ibutton.df.combined.temp.dailylow %>% 
-  dplyr::filter(!treatment == "Site.reference") %>% 
-  ungroup() %>% 
-  rstatix::t_test(low ~ treatment, paired = TRUE) -> pwc.ibutton.df.combined.temp.dailylow
-
-pwc.ibutton.df.combined.temp.dailylow
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df      p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl>  <dbl>
-#   1 low   UV.filtered UV.transmitted     6     6     -2.16     5 0.0829
-
-# not taking into account paired dates
-anova.ibutton.df.combined.temp.dailylow <-  ibutton.df.combined.temp.dailylow %>% ungroup() %>% 
-  rstatix::anova_test(low ~ treatment)
-
-rstatix::get_anova_table(anova.ibutton.df.combined.temp.dailylow)
-
-# ANOVA Table (type II tests)
-# 
-# Effect DFn DFd     F     p p<.05   ges
-# 1 treatment   2  11 1.013 0.395       0.155
-
-
-
-# high RH stats 
-
-ibutton.df.combined.RH.dailyhigh <- rbind(ibutton.df.RH.feb.dailyhigh,ibutton.df.RH.sept.dailyhigh)
-
-# Site.reference not a good comparison here since it is only from winter, plus can't do paired
-
-ibutton.df.combined.RH.dailyhigh %>% 
-  dplyr::filter(!treatment == "Site.reference") %>% 
-  ungroup() %>% 
-  rstatix::t_test(high ~ treatment, paired = TRUE) -> pwc.ibutton.df.combined.RH.dailyhigh
-
-pwc.ibutton.df.combined.RH.dailyhigh
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df     p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl> <dbl>
-#   1 high  UV.filtered UV.transmitted     6     6    -0.417     5 0.694 
-
-# not taking into account paired dates
-anova.ibutton.df.combined.RH.dailyhigh <-  ibutton.df.combined.RH.dailyhigh %>% ungroup() %>% 
-  rstatix::anova_test(high ~ treatment)
-
-rstatix::get_anova_table(anova.ibutton.df.combined.RH.dailyhigh)
-
-# ANOVA Table (type II tests)
-# 
-# Effect DFn DFd     F     p p<.05   ges
-# 1 treatment   2  11 1.308 0.309       0.192
-
-
-# low RH stats 
-
-ibutton.df.combined.RH.dailylow <- rbind(ibutton.df.RH.feb.dailylow,ibutton.df.RH.sept.dailylow)
-
-# Site.reference not a good comparison here since it is only from winter, plus can't do paired
-
-ibutton.df.combined.RH.dailylow %>% 
-  dplyr::filter(!treatment == "Site.reference") %>% 
-  ungroup() %>% 
-  rstatix::t_test(low ~ treatment, paired = TRUE) -> pwc.ibutton.df.combined.RH.dailylow
-
-pwc.ibutton.df.combined.RH.dailylow
-
-# # A tibble: 1 x 8
-# .y.   group1      group2            n1    n2 statistic    df     p
-# * <chr> <chr>       <chr>          <int> <int>     <dbl> <dbl> <dbl>
-#   1 low   UV.filtered UV.transmitted     6     6     -1.75     5  0.14
-
-# not taking into account paired dates
-anova.ibutton.df.combined.RH.dailylow <-  ibutton.df.combined.RH.dailylow %>% ungroup() %>% 
-  rstatix::anova_test(low ~ treatment)
-
-rstatix::get_anova_table(anova.ibutton.df.combined.RH.dailylow)
-
-# ANOVA Table (type II tests)
-# 
-# Effect DFn DFd     F     p p<.05  ges
-# 1 treatment   2  11 0.054 0.948       0.01
+# # A tibble: 3 x 11
+# plot        .y.   group1         group2            n1    n2 statistic    df     p p.adj p.adj.signif
+# <chr>       <chr> <chr>          <chr>          <int> <int>     <dbl> <dbl> <dbl> <dbl> <chr>       
+#   1 twentythree low   Site.reference UV.filtered        2     2      8.08     1 0.078 0.117 ns          
+# 2 twentythree low   Site.reference UV.transmitted     2     2     17.9      1 0.036 0.108 ns          
+# 3 twentythree low   UV.filtered    UV.transmitted     2     2     -1.16     1 0.452 0.452 ns  
 
