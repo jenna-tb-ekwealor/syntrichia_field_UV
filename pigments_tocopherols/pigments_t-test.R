@@ -5,15 +5,17 @@ library(ggpubr)
 library(dplyr)
 library(rstatix)
 
-# for colors choose from colFun palette
-source('colFun.R')
-
 UV.filtered<-"#14d2dc" #turquoise
 UV.transmitted<-"#fa7850" #orange
 Site.reference<-"#8214a0" #purple
 Lab.control<-"#a0fa82" #green
 
 setwd("/Users/jennaekwealor/Documents/dissertation_repositories/syntrichia_field_UV/pigments_tocopherols")
+
+
+# for colors choose from colFun palette
+source('colFun.R')
+
 
 # load data
 norm <- read.csv("final-data.csv")
@@ -51,27 +53,27 @@ trtmnt.type <- unique(data.slim$Treatment)
 # loop through to find outliers per pigment/antioxidant per treatment   
 for (trtmnt in trtmnt.type) {
   data.slim %>% group_by(Treatment) %>%
-  filter(Treatment == trtmnt) -> data.trtmnt
+    filter(Treatment == trtmnt) -> data.trtmnt
   data.trtmnt %>% group_by(Site)
-
   
-for (pig in pigments.used) {
-  data.loop <- as.data.frame(cbind(data.trtmnt$Site, data.trtmnt$Treatment, data.trtmnt$Sample, data.trtmnt[pig]))
-  names(data.loop)[names(data.loop) == "data.trtmnt$Site"] <- "Site" # creates a dataframe just for that loop iteration, one pigment and 3 sample variables 
-  names(data.loop)[names(data.loop) == "data.trtmnt$Sample"] <- "Sample" # names the headers oddly so fixing it
-  names(data.loop)[names(data.loop) == "data.trtmnt$Treatment"] <- "Treatment" # names the headers oddly so fixing it
-  formula <- as.formula(paste(pig," ~ Site",sep = ""))
-  mod <- lm(formula, data=data.loop)
-  cooksd <- cooks.distance(mod)
-  # plot 
-  # plot(cooksd, pch="*", cex=2, main=paste("Influential Obs by Cooks distance: ",pig,sep = ""))  # plot cook's distance
-  # abline(h = 35*mean(cooksd, na.rm=T), col="red")  # add cutoff line
-  # text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>8*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
-  n <- length(data.loop$Sample)
-  influential <- as.numeric(names(cooksd)[(cooksd > (8)*mean(cooksd, na.rm=T))])  # influential row numbers
-  y <- data.trtmnt[influential,1]
-  outliers[[trtmnt]][[pig]] <- y
-}}
+  
+  for (pig in pigments.used) {
+    data.loop <- as.data.frame(cbind(data.trtmnt$Site, data.trtmnt$Treatment, data.trtmnt$Sample, data.trtmnt[pig]))
+    names(data.loop)[names(data.loop) == "data.trtmnt$Site"] <- "Site" # creates a dataframe just for that loop iteration, one pigment and 3 sample variables 
+    names(data.loop)[names(data.loop) == "data.trtmnt$Sample"] <- "Sample" # names the headers oddly so fixing it
+    names(data.loop)[names(data.loop) == "data.trtmnt$Treatment"] <- "Treatment" # names the headers oddly so fixing it
+    formula <- as.formula(paste(pig," ~ Site",sep = ""))
+    mod <- lm(formula, data=data.loop)
+    cooksd <- cooks.distance(mod)
+    # plot 
+    # plot(cooksd, pch="*", cex=2, main=paste("Influential Obs by Cooks distance: ",pig,sep = ""))  # plot cook's distance
+    # abline(h = 35*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+    # text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>8*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+    n <- length(data.loop$Sample)
+    influential <- as.numeric(names(cooksd)[(cooksd > (8)*mean(cooksd, na.rm=T))])  # influential row numbers
+    y <- data.trtmnt[influential,1]
+    outliers[[trtmnt]][[pig]] <- y
+  }}
 
 ##
 
@@ -90,7 +92,6 @@ length(data_no_outliers$Sample)
 #### pca ####
 
 # clean up data
-wide_data <- data_no_outliers[,colSums(is.na(data_no_outliers))<nrow(data_no_outliers)]
 wide_data <- na.omit(wide_data)
 
 # select columns for pca
@@ -183,23 +184,23 @@ summary.summary.nolabcontrol.pigments.some <- summary.nolabcontrol.pigments.some
 
 # make a paired box plot of pigments and field experiment
 box.box.pigments.some<-ggboxplot(summary.nolabcontrol.pigments.some, x = "Treatment", y = "mean",
-                                fill = "Treatment",
-                                color = "gray30",
-                                size = 0.5,
-                                point.size = 1,
-                                outlier.size = 0.75,
-                                id = "Site",
-                                line.color = "#4D4D4D66", 
-                                facet.by = c("Pigment"),
-                                scales = "free_y",
-                           panel.labs = list(Pigment=c("Violaxanthin", "Antheraxanthin", "Zeaxanthin", "Neoxanthin","Lutein", "b-carotene", "Chlorophyll a", "Chlorophyll b", "Chl a : Chl b")), 
-                           panel.labs.background = list(color = "black", fill = "black"),
-                           panel.labs.font = list(size=14),
-                           width = 0.7,
-                           xlab = "",
-                           ylab = "Normalized quantity (%)",
-                           ggtheme = theme_light()) +
-                          stat_pvalue_manual(stat.test.pigments, label = "p.adj.signif") 
+                                 fill = "Treatment",
+                                 color = "gray30",
+                                 size = 0.5,
+                                 point.size = 1,
+                                 outlier.size = 0.75,
+                                 id = "Site",
+                                 line.color = "#4D4D4D66", 
+                                 facet.by = c("Pigment"),
+                                 scales = "free_y",
+                                 panel.labs = list(Pigment=c("Violaxanthin", "Antheraxanthin", "Zeaxanthin", "Neoxanthin","Lutein", "b-carotene", "Chlorophyll a", "Chlorophyll b", "Chl a : Chl b")), 
+                                 panel.labs.background = list(color = "black", fill = "black"),
+                                 panel.labs.font = list(size=14),
+                                 width = 0.7,
+                                 xlab = "",
+                                 ylab = "Normalized quantity (%)",
+                                 ggtheme = theme_light()) +
+  stat_pvalue_manual(stat.test.pigments, label = "p.adj.signif") 
 
 box.box.pigments.some<-ggpar(box.box.pigments.some,
                              legend = "right",
@@ -210,7 +211,7 @@ box.box.pigments.some<-ggpar(box.box.pigments.some,
                              font.x = c(18,"bold"),
                              font.title = c(20, "bold"),
                              font.xtickslab =  c(0, "plain")) +
-expand_limits(x = 0, y = 0) +
+  expand_limits(x = 0, y = 0) +
   scale_fill_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) 
 
 
@@ -218,7 +219,34 @@ box.box.pigments.some
 
 
 
-#
+# test for difference in VAZ pool
+# mean per treatment, per plot (mean of technical replicates) for pigments of interest
+data.nolabcontrol.pigments.vaz <- filter(data.nolabcontrol, Pigment == "V.A.Z")
+
+summary.nolabcontrol.pigments.vaz <- na.omit(data.nolabcontrol.pigments.vaz) %>%
+  group_by(Pigment,Treatment, Site)  %>%
+  dplyr::summarise(means = mean(Amount), n = n(), sd = sd(Amount))
+
+# do pairwise wilcox on MEAN of technical replicates, paired by site VAZ
+summary.nolabcontrol.pigments.vaz %>% group_by(Pigment) %>% 
+  rstatix::wilcox_test(data = ., means ~ Treatment, paired = T, p.adjust.method = "BH") -> stat.test.vaz
+stat.test.vaz
+
+# # A tibble: 3 x 10
+# Pigment .y.   group1         group2            n1    n2 statistic       p p.adj p.adj.signif
+# * <fct>   <chr> <chr>          <chr>          <int> <int>     <dbl>   <dbl> <dbl> <chr>       
+#   1 V.A.Z   means UV Filtered    UV Transmitted    19    19       148 0.032   0.048 *           
+#   2 V.A.Z   means UV Filtered    Site Reference    19    19        55 0.113   0.113 ns          
+# 3 V.A.Z   means UV Transmitted Site Reference    19    19        17 0.00079 0.002 **    
+#   
+
+# find mean per treatment 
+summary_summary.nolabcontrol.pigments.vaz <- na.omit(summary.nolabcontrol.pigments.vaz) %>%
+  group_by(Pigment,Treatment)  %>%
+  dplyr::summarise(mean = mean(means), n = n(), sd = sd(means))
+summary_summary.nolabcontrol.pigments.vaz
+
+ggboxplot(summary.nolabcontrol.pigments.vaz, x = "Treatment", y = "means")
 
 
 
@@ -269,39 +297,39 @@ summary.summary.nolabcontrol.tocopherols
 
 
 # add y-value position to stat.test tibble for plotting
- stat.test.tocopherols <- stat.test.tocopherols %>% mutate(y.position = c(27.5,30.5,29,
-                                                                          9.1,10.1,9.6))
+stat.test.tocopherols <- stat.test.tocopherols %>% mutate(y.position = c(27.5,30.5,29,
+                                                                         9.1,10.1,9.6))
 
 # plot
 box.box.tocopherols<-ggboxplot(summary.nolabcontrol.tocopherols, x = "Treatment", y = "mean",
-                              fill = "Treatment",
-                              color = "gray30",
-                              size = 0.5,
-                              point.size = 0.75,
-                              outlier.size = 0.25,
-                              id = "Site",
-                              line.color = "#4D4D4D66", 
-                              facet.by = c("Pigment"),
-                              scales = "free_y",
-                                     panel.labs = list(Pigment=c("a-tocopherol", "b-tocopherol")), 
-                                     panel.labs.background = list(color = "black", fill = "black"),
-                                     panel.labs.font = list(size=14),
-                                     width = 0.7,
-                                     xlab = "",
-                                     ylab = "Normalized quantity (mmol/mol)",
-                                     ggtheme = theme_light()) +
-                                  #   title = "Tocopherols decrease with UV radiation\n") +
-                                stat_pvalue_manual(stat.test.tocopherols, label = "p.adj.signif") 
+                               fill = "Treatment",
+                               color = "gray30",
+                               size = 0.5,
+                               point.size = 0.75,
+                               outlier.size = 0.25,
+                               id = "Site",
+                               line.color = "#4D4D4D66", 
+                               facet.by = c("Pigment"),
+                               scales = "free_y",
+                               panel.labs = list(Pigment=c("a-tocopherol", "b-tocopherol")), 
+                               panel.labs.background = list(color = "black", fill = "black"),
+                               panel.labs.font = list(size=14),
+                               width = 0.7,
+                               xlab = "",
+                               ylab = "Normalized quantity (mmol/mol)",
+                               ggtheme = theme_light()) +
+  #   title = "Tocopherols decrease with UV radiation\n") +
+  stat_pvalue_manual(stat.test.tocopherols, label = "p.adj.signif") 
 
 box.box.tocopherols<-ggpar(box.box.tocopherols,
-                        legend = "right",
-                        legend.title = "Field Treatment",
-                        font.legend = c(16, "plain"),
-                        font.ytickslab =  c(16, "plain"),
-                        font.y = c(18,"plain"),
-                        font.x = c(18,"bold"),
-                        font.title = c(20, "bold"),
-                        font.xtickslab =  c(0, "plain"))+
+                           legend = "right",
+                           legend.title = "Field Treatment",
+                           font.legend = c(16, "plain"),
+                           font.ytickslab =  c(16, "plain"),
+                           font.y = c(18,"plain"),
+                           font.x = c(18,"bold"),
+                           font.title = c(20, "bold"),
+                           font.xtickslab =  c(0, "plain"))+
   expand_limits(x = 0, y = 0) +
   scale_fill_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) 
 
@@ -325,14 +353,19 @@ data_sitereference_labcontrol_pigments <- filter(data_sitereference_labcontrol, 
 # calculate mean of technical replicates
 summary_sitereference_labcontrol_pigments <- data_sitereference_labcontrol_pigments %>%
   group_by(Pigment, Treatment, Site)  %>%
-  dplyr::summarise(mean = mean(Amount), n = n(), sd = sd(Amount))
+  dplyr::summarise(means = mean(Amount), n = n(), sd = sd(Amount))
 summary_sitereference_labcontrol_pigments
 
-
-# paired t test of pigments across window field treatment
+# calculate mean per treatment 
 data_sitereference_labcontrol_pigments %>%
+  group_by(Treatment, Pigment) %>% 
+  dplyr::summarise(mean = mean(Amount), sd = sd(Amount), n = n()) -> summary_summary_sitereference_labcontrol_pigments
+  
+# paired t test of pigments across window field treatment
+
+summary_sitereference_labcontrol_pigments %>%
   group_by(Pigment) %>%
-rstatix::pairwise_wilcox_test(data = ., Amount ~ Treatment, paired = F, p.adjust.method = "BH") -> stat.test.lab.pigments
+  rstatix::pairwise_wilcox_test(data = ., Amount ~ Treatment, paired = F, p.adjust.method = "BH") -> stat.test.lab.pigments
 stat.test.lab.pigments
 
 # # A tibble: 8 x 10
@@ -356,13 +389,14 @@ summary_sitereference_labcontrol_pigments$Pigment <- factor(summary_sitereferenc
 # Grouped stacked bar chart
 my_title <- expression(paste("Photosynthetic Pigments and Antioxidants in Field and Lab Grown ", italic("Syntrichia caninervis")))
 
-barplot <- ggplot(summary_sitereference_labcontrol_pigments, aes(fill=Pigment, y=mean, x=Treatment)) + 
+barplot <- ggplot(summary_summary_sitereference_labcontrol_pigments, aes(fill=Pigment, y=mean, x=Treatment)) + 
   geom_bar(position="stack", stat="identity", colour="white") +
   #ggtitle("Photosynthetic Pigments and Antioxidants in Field and Lab Grown Plants") +
   theme_minimal() +
   xlab("") +
-  ylab("Normalized quantity (%)") +
-  scale_fill_manual(values = c("violaxanthin" = viola, "antheraxanthin" = anthera,"zeaxanthin" = zea,"neoxanthin" = neo, "lutein" = lutein, "beta.carotene.sum" = betac, "chlorophyll.a" = chla, "chlorophyll.b" = chlb), labels = c("Violaxanthin", "Antheraxanthin", "Zeaxanthin", "Neoxanthin", "Lutein", "b-carotene", "Chlorophyll a", "Chlorophyll b"))
+   ylab("Normalized quantity (%)") 
+  #+
+  # scale_fill_manual(values = c("violaxanthin" = viola, "antheraxanthin" = anthera,"zeaxanthin" = zea,"neoxanthin" = neo, "lutein" = lutein, "beta.carotene.sum" = betac, "chlorophyll.a" = chla, "chlorophyll.b" = chlb), labels = c("Violaxanthin", "Antheraxanthin", "Zeaxanthin", "Neoxanthin", "Lutein", "b-carotene", "Chlorophyll a", "Chlorophyll b"))
 
 barplot + theme(
   plot.title = element_text(size = 20, face = "bold"),
@@ -403,7 +437,7 @@ stat.test.lab.tocopherols
 # * <fct>            <chr>  <chr>          <chr>       <int> <int>     <dbl>      <dbl>      <dbl> <chr>       
 #   1 beta.tocopherol  Amount Site Reference Lab Control    61     9       548 0.00000167 0.00000167 ****        
 #   2 alpha.tocopherol Amount Site Reference Lab Control    61     9       528 0.00000903 0.00000903 ****        
-  
+
 
 
 

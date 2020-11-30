@@ -1,19 +1,19 @@
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(ggpubr)
+library(tidyverse)
 library(rstatix)
+library(dplyr)
+# library(ggplot2)
+# library(ggpubr)
 
 setwd("~/Documents/dissertation_repositories/syntrichia_field_UV/data_loggers")
 
-data <- na.omit(read.csv(file = "light_quality_raw.csv"))
-data$site <- as.factor(data$site)
-data$measure <- as.numeric(data$measure)
+alldata <- na.omit(read.csv(file = "light_quality_raw.csv"))
+alldata$site <- as.factor(alldata$site)
+alldata$measure <- as.numeric(alldata$measure)
  
-#data <- data %>% ungroup()
+#alldata <- alldata %>% ungroup()
 
 #### PAR ####
-data.par <- data %>% dplyr::filter(., metric == "PAR") %>% select(site,measure,treatment)
+data.par <- alldata %>% dplyr::filter(., metric == "PAR") %>% select(site,measure,treatment)
 
 
 # summary stats
@@ -28,9 +28,9 @@ data.par %>%
 # 2 UV Filtering    measure     19 1324.  348.
 # 3 UV Transmitting measure     19 1343.  340.
 
-# box plot
-bxp <- ggboxplot(data.par, x = "treatment", y = "measure", add = "point")
-bxp
+# # box plot
+# bxp <- ggboxplot(data.par, x = "treatment", y = "measure", add = "point")
+# bxp
 
 # identify outliers
 data.par %>%
@@ -79,7 +79,7 @@ pwc.par
 
 
 #### UV ####
-data.UV <- data %>% dplyr::filter(., metric == "UV") %>% select(site,measure,treatment)
+data.UV <- alldata %>% dplyr::filter(., metric == "UV") %>% select(site,measure,treatment)
 
 
 # summary stats
@@ -94,9 +94,9 @@ data.UV %>%
 # 2 UV Filtering    measure     19   1.65  0.493
 # 3 UV Transmitting measure     19  91.3  25.5  
 
-# box plot
-bxp <- ggboxplot(data.UV, x = "treatment", y = "measure", add = "point")
-bxp
+# # box plot
+# bxp <- ggboxplot(data.UV, x = "treatment", y = "measure", add = "point")
+# bxp
 
 # identify outliers
 data.UV %>%
@@ -147,3 +147,4 @@ pwc.UV
 
 
 #   
+

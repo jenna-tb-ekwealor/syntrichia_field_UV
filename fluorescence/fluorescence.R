@@ -2,22 +2,14 @@ library(tidyverse)
 library(ggpubr)
 library(ggplot2)
 library(dplyr)
-library(RColorBrewer)
 library(rstatix)
+library(Rmisc)
 
-# display.brewer.all(colorblindFriendly = TRUE)
-# 
-# display.brewer.pal(n = 8, name = 'Set2')
-# brewer.pal(n = 8, name = "Set2")
-#"#66C2A5" "#FC8D62" "#8DA0CB" "#E78AC3" "#A6D854" "#FFD92F" "#E5C494" "#B3B3B3"
-# teal      orange    purple    pink      green     yellow    tan       gray
+UV.filtered<-"#14d2dc" #turquoise
+UV.transmitted<-"#fa7850" #orange
+Site.reference<-"#8214a0" #purple
 
-UV.filtered<-"#66C2A5" #teal
-UV.transmitted<-"#FC8D62" #orange
-Site.reference<-"#8DA0CB" #purple
-
-
-setwd("/Users/jennaekwealor/Box Sync/dissertation/project-field/fluorescence")
+setwd("/Users/jennaekwealor/Documents/dissertation_repositories/syntrichia_field_UV/fluorescence")
 
 
 
@@ -182,7 +174,6 @@ box.box.fvfm<-ggboxplot(field.field, x = "Treatment", y = "Fv.Fm",
                         size = 0.5,
                         point.size = 1,
                         outlier.size = 1,
-                        palette = "Set2",
                         id = "Site",
                         line.color = "#4D4D4D66", 
          facet.by = c("Time"),
@@ -193,6 +184,7 @@ box.box.fvfm<-ggboxplot(field.field, x = "Treatment", y = "Fv.Fm",
          xlab = "Recovery time",
          ylab = expression("Maximum PSII quantum efficiency (F"[v]*"/F"[m]*")"),
          ggtheme = theme_light()) +
+        scale_fill_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
         stat_pvalue_manual(stat.test.FvFm.field, label = "p.adj.signif") 
         #title = "Recovery of Photosystem II Maximum Potential Efficiency\n") 
 
@@ -329,7 +321,6 @@ box.box.ePS2R<-ggboxplot(field.field, x = "Treatment", y = "e.PS2R",
                         size = 0.5,
                         point.size = 1,
                         outlier.size = 1,
-                        palette = "Set2",
                         id = "Site",
                         line.color = "#4D4D4D66", 
                         facet.by = c("Time"),
@@ -340,6 +331,7 @@ box.box.ePS2R<-ggboxplot(field.field, x = "Treatment", y = "e.PS2R",
                         xlab = "Recovery time",
                         ylab = "PSII quantum efficiency (\u03A6PSII)",
                         ggtheme = theme_light()) +
+  scale_fill_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
   stat_pvalue_manual(stat.test.ePS2R.field, label = "p.adj.signif") 
 #title = "Recovery of Photosystem II Quantum Efficiency\n") 
 
@@ -482,7 +474,7 @@ ggplot(., aes(x=Time, y=Value, group=interaction(LabTreatment, Treatment), color
   ylim(0,0.9) +
   theme_minimal() +
   theme(legend.position="right") +
-  scale_color_brewer(palette="Set2") +
+  scale_color_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
   scale_linetype_discrete(name = "Lab Treatment", labels=c("UV Dose","None")) + 
   guides(linetype = guide_legend(reverse = TRUE)) +
   theme(axis.text=element_text(size=16),
@@ -508,7 +500,7 @@ ffUVsse_combined_metrics %>% filter(., Metric == "e.PS2R") %>%
   ylim(0,0.7) +
   theme_minimal() +
   theme(legend.position="right") +
-  scale_color_brewer(palette="Set2") +
+  scale_color_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
   scale_linetype_discrete(name = "Lab Treatment", labels=c("UV Dose","None")) + 
   guides(linetype = guide_legend(reverse = TRUE)) +
   theme(axis.text=element_text(size=16),
@@ -800,7 +792,7 @@ ggplot(ffsse_combined_metrics_fofm, aes(x=Time, y=Value, group=interaction(Treat
   # ylim(0,0.9) +
   theme_minimal() +
   theme(legend.position="right") +
-  scale_color_brewer(palette="Set2") +
+  scale_color_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
   scale_linetype_discrete(name = "Metric", labels =c("Fm", "Fo")) +
   guides(linetype = guide_legend(reverse = TRUE)) +
   theme(axis.text=element_text(size=16),
@@ -870,7 +862,7 @@ ggplot(fUVsse_combined_metrics_fofm, aes(x=Time, y=Value, group=interaction(Trea
   # ylim(0,0.9) +
   theme_minimal() +
   theme(legend.position="right") +
-  scale_color_brewer(palette="Set2") +
+  scale_color_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
   scale_linetype_discrete(name = "Metric", labels =c("Fm", "Fo")) +
   guides(linetype = guide_legend(reverse = TRUE)) +
   theme(axis.text=element_text(size=16),
@@ -898,7 +890,7 @@ ggplot(fsse_combined_metrics_fvfm, aes(x=Time, y=Value, group=interaction(Treatm
   # ylim(0,0.9) +
   theme_minimal() +
   theme(legend.position="right") +
-  scale_color_brewer(palette="Set2") +
+  scale_color_manual(values=c(UV.filtered, UV.transmitted, Site.reference)) +
   scale_linetype_discrete(name = "Metric", labels =c("Fm", "Fo")) + 
   guides(linetype = guide_legend(reverse = TRUE)) +
   theme(axis.text=element_text(size=16),
@@ -929,5 +921,17 @@ field %>% group_by(Treatment,Time) %>%
   pairwise_wilcox_test(data = ., e.PS2R ~ Exp, paired = TRUE) -> stat.test.ePS2R.Exp
 
 view(stat.test.ePS2R.Exp)
+
+
+
+
+
+
+ggpubr::ggarrange(sp,                                                 # First row with scatter plot
+          ggarrange(bxp, dp, ncol = 2, labels = c("B", "C")), # Second row with box and dot plots
+          nrow = 2, 
+          labels = "A"                                        # Labels of the scatter plot
+) 
+
 
 
