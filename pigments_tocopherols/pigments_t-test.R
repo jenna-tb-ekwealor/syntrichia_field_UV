@@ -92,7 +92,7 @@ length(data_no_outliers$Sample)
 #### pca ####
 
 # clean up data
-wide_data <- na.omit(wide_data)
+wide_data <- na.omit(data_no_outliers)
 
 # select columns for pca
 wide_data.only.want <- wide_data %>% select(Treatment, neoxanthin, violaxanthin, antheraxanthin, lutein, zeaxanthin, chlorophyll.a, chlorophyll.b, beta.carotene.sum, total.tocopherols)
