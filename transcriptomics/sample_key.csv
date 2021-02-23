@@ -1,0 +1,13 @@
+sampleName,fileName,UV,site
+F5A,F5A.count,filtered,5
+F5B,F5B.count,transmitted,5
+F9A,F9A.count,filtered,9
+F9B,F9B.count,transmitted,9
+F12A,F12A.count,filtered,12
+F12B,F12B.count,transmitted,12
+F14A,F14A.count,filtered,14
+F14B,F14B.count,transmitted,14
+F15A,F15A.count,filtered,15
+F15B,F15B.count,transmitted,15
+F17A,F17A.count,filtered,17
+F17B,F17B.count,transmitted,17
