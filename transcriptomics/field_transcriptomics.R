@@ -2,14 +2,18 @@
 library(DESeq2)
 library(dplyr)
 library(ggplot2)
-library(pheatmap)
 
+
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# 
+# BiocManager::install("DESeq2")
 
 UV.filtered<-"#14d2dc" #turquoise
 UV.transmitted<-"#fa7850" #orange
 
 
-setwd("/Users/jennaekwealor/Box Sync/dissertation/project-field/transcriptomics/")
+setwd("/Users/jennaekwealor/Documents/dissertation_repositories/syntrichia_field_UV/transcriptomics")
 
 directory <- ("htseq-count_10142020/")
 
@@ -44,7 +48,7 @@ dds <- dds[keep,] # keep rows from above
 # plot dispersion
 plotDispEsts(dds)
 
-# plot PCA
+#### plot PCA ####
 vsd <- vst(dds, blind=T)
 plotPCA(vsd, intgroup=c("site", "UV")) + theme_minimal()
 # ntop = number of top genes to use for principal components, selected by highest row variance
@@ -61,39 +65,15 @@ p_pca_all <- p_pca_all +
   theme_minimal() +
   theme(legend.text.align = 0) +
   guides(shape = FALSE) +
-  xlab("PC1 (41%)") + ylab("PC2 (24%)") 
+  xlab("PC1 (41%)") + ylab("PC2 (24%)") # check these
 p_pca_all
 
 pdf("p_pca_all.pdf") 
 p_pca_all
 dev.off()
 
-# #### plot heat map top varying 1000 GENES ####
-# topVarGenes <- head(order(rowVars(assay(vsd)), decreasing = TRUE), 1000)
-# mat  <- assay(vsd)[ topVarGenes, ]
-# mat  <- mat - rowMeans(mat)
-# anno <- as.data.frame(colData(vsd)[, c("UV")])
-# ann_colors = list(time = c(filtered = UV.filtered, transmitted = UV.transmitted))
-# 
-# heatmap <- pheatmap(mat = mat, 
-#                        annotation_col = anno, 
-#                        annotation_colors = ann_colors, 
-#                        show_rownames = FALSE,
-#                        show_colnames = F, 
-#                        drop_levels = TRUE,
-#                        legend = TRUE, 
-#                        annotation_legend = TRUE,
-#                        fontsize = 16,
-#                        main = "TOP 1000 Heatmap")
-# heatmap
-# 
-# pdf("heatmap_1000.pdf") 
-# heatmap
-# dev.off()
-# 
 
-
-### UV filtered vs transmitted (controlling for differences due to site)
+#### UV filtered vs transmitted (controlling for differences due to site) ####
 
 resultsNames(dds) # gives a list of "name" comparisons you can use as shortcut instead of "contrasts"
 results(dds, name = "UV_filtered_vs_transmitted")  -> UV_filtered_vs_transmitted
@@ -120,7 +100,7 @@ UV_filtered_vs_transmitted_ann %>%
 write.csv(UV_filtered_vs_transmitted_ann_strict, "UV_filtered_vs_transmitted_ann_strict.csv")
 
 
-### Plot LFC  
+#### Plot LFC ####
 
 # lfcshrink 
 lfcshrink_UV_filtered_vs_transmitted <- lfcShrink(dds, coef="UV_filtered_vs_transmitted", lfcThreshold=2, type="apeglm")
