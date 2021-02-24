@@ -1,5 +1,5 @@
 # syntrichia_field_UV
-data and code for the paper: https://academic.oup.com/jxb/advance-article-abstract/doi/10.1093/jxb/erab051/6141413
+Data and code for the paper: https://academic.oup.com/jxb/advance-article-abstract/doi/10.1093/jxb/erab051/6141413
 
 Raw RNAseq data is available at: https://www.ncbi.nlm.nih.gov/bioproject/704617
 
