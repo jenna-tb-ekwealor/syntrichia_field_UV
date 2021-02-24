@@ -1,6 +1,9 @@
 # syntrichia_field_UV
 data and code for the paper: https://academic.oup.com/jxb/advance-article-abstract/doi/10.1093/jxb/erab051/6141413
 
+Raw RNAseq data is available at: https://www.ncbi.nlm.nih.gov/bioproject/704617
+
+## Microclimate
 
  * the script `data_loggers/hobo_data/field/temp_light.R` processes the temperature and light from feb-june 2019 in uv-filtering and uv-transmitting windows 
 
@@ -8,10 +11,16 @@ data and code for the paper: https://academic.oup.com/jxb/advance-article-abstra
 
  * the script `data_loggers/light_quality.R` processes the point measurements of PAR and UV-A/B under uv-filtering windows, uv-transmitting windows, and site reference microsites. 
 
+## Pigments and antioxidants
+
  * the script `pigments_tocopherols/pigments_t-test.R` processes pigments and tocopherol data for all field treatments and lab cultures. 
+
+## Chlorophyll fluorescence
  
  * the script `fluorescence/fluorescence.R` processes a subset of the full fluorescence data (only Fv/Fm, Fo, Fm, and PHI PSII) from field and lab experiments. 
   
+ ## Transcriptomics
+ 
  * the script `transcriptomics/bowtie2_index_build_caninervis_genome.sh` builds a bowtie2 index of the S. caninervis reference genome (Silva et al. 2020, To dry perchance to live: insights from the genome of the desiccation-tolerant biocrust moss Syntrichia caninervis, The Plant Journal). 
 
  * the script `transcriptomics/clean_rna_field.sh` trims and quality-filters raw RNAseq data. 
